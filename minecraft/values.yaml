@@ -80,7 +80,7 @@ minecraftServer:
   # One of: creative, survival, adventure, spectator
   gameMode: survival
   # Message of the Day
-  motd: "epic style version 2"
+  motd: "epic style version 3: electric boogalo redux"
   # If true, enable player-vs-player damage.
   pvp: false
   # One of: DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED
