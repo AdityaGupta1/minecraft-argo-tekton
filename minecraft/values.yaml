@@ -80,7 +80,7 @@ minecraftServer:
   # One of: creative, survival, adventure, spectator
   gameMode: survival
   # Message of the Day
-  motd: "epic style 7: jepn"
+  motd: "epic style 8: jepn 3: 2"
   # If true, enable player-vs-player damage.
   pvp: false
   # One of: DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED
