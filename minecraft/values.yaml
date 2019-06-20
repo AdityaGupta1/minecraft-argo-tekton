@@ -81,7 +81,6 @@ minecraftServer:
   gameMode: survival
   # Message of the Day
   motd: "it is $(date+%I) o clock\nyou best be sleeping"
-you best be sleeping"
   # If true, enable player-vs-player damage.
   pvp: false
   # One of: DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED
