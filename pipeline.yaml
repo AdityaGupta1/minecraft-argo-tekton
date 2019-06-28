@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: env-configmap
+data:
+  ARGOCD_SERVER: <Argo CD server address>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env-secret
+data:
+  ARGOCD_USERNAME: <base64 encoded Argo CD username>
+  ARGOCD_PASSWORD: <base64 encoded Argo CD password>
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: argocd-task-sync-and-wait
+spec:
+  inputs:
+    params:
+      - name: application-name
+        description: name of the application to sync
+      - name: revision
+        description: the revision to sync to
+        default: HEAD
+      - name: flags
+        default: --
+  containerTemplate:
+    envFrom:
+      - configMapRef:
+          name: env-configmap
+      - secretRef:
+          name: env-secret
+  steps:
+    - name: login
+      image: argoproj/argocd
+      command: ["/bin/bash", "-c"]
+      args:
+        - if [ -z $ARGOCD_AUTH_TOKEN ]; then
+            yes | argocd login $ARGOCD_SERVER --username=ARGOCD_USERNAME --password=ARGOCD_PASSWORD;
+          fi
+    - name: sync
+      image: argoproj/argocd
+      command: ["/bin/bash", "-c"]
+      args:
+        - argocd app sync ${inputs.params.application-name} --revision ${inputs.params.revision} ${inputs.params.flags}
+    - name: wait
+      image: argoproj/argocd
+      command: ["/bin/bash", "-c"]
+      args:
+        - argocd app wait ${inputs.params.application-name} --health ${inputs.params.flags}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-auth
+  annotations:
+    tekton.dev/git-0: https://github.com
+type: kubernetes.io/basic-auth
+data:
+  username: <base64 encoded GitHub username>
+  password: <base64 encoded GitHub password or personal access token>
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: git-user
+secrets:
+  - name: github-auth
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineResource
+metadata:
+  name: minecraft-git
+spec:
+  type: git
+  params:
+    - name: url
+      value: https://github.com/AdityaGupta1/minecraft-argo-test.git
+    - name: revision
+      value: HEAD
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: push-to-git
+spec:
+  inputs:
+    resources:
+      - name: workspace
+        type: git
+    params:
+      - name: username
+        description: GitHub username
+      - name: email
+        description: GitHub email address
+      - name: command
+        description: command to run in the repository before committing and pushing
+      - name: commit-message
+        description: commit message
+  steps:
+    - name: write
+      image: alpine/git
+      command: ["sh", "-c", "cd workspace ; ${inputs.params.command}"]
+    - name: push
+      image: alpine/git
+      command: ["sh", "-c", "cd workspace ; git config user.name ${inputs.params.username} ; git config user.email ${inputs.params.email} ; \
+       git add . ; git commit -m'${inputs.params.commit-message}' ; git push --set-upstream origin master"]
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: argocd-pipeline
+spec:
+  resources:
+    - name: workspace
+      type: git
+  tasks:
+    - name: push-to-git
+      taskRef:
+        name: push-to-git
+      resources:
+        inputs:
+          - name: workspace
+            resource: workspace
+      params:
+        - name: username
+          value: <GitHub username>
+        - name: email
+          value: <GitHub account email address>
+        - name: command
+          value: "cd minecraft ; sed -i '/motd:/c\\ \ motd: \"hello from tekton\"' values.yaml"
+        - name: commit-message
+          value: hello from tekton
+    - name: sync-application
+      taskRef:
+        name: argocd-task-sync-and-wait
+      params:
+        - name: application-name
+          value: minecraft
+        - name: flags
+          value: --insecure
+      runAfter:
+        - push-to-git
+---
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: argocd-pipeline-run
+spec:
+  serviceAccount: git-user
+  pipelineRef:
+    name: argocd-pipeline
+  resources:
+    - name: workspace
+      resourceRef:
+        name: minecraft-git
