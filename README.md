@@ -16,7 +16,7 @@ This repository shows how to use [Tekton CD](https://tekton.dev/) to change and 
 
 ## Known issues
 
-Currently, logging in with an authentication token does not seem to work. It gives an error similar to the following:
+[#1](https://github.com/AdityaGupta1/minecraft-argo-tekton/issues/1)) Currently, logging in with an authentication token does not seem to work. It gives an error similar to the following:
 
 ```
 rpc error: code = Internal desc = stream terminated by RST_STREAM with error code: PROTOCOL_ERROR
