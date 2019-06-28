@@ -1,6 +1,6 @@
 # Minecraft with Argo CD and Tekton CD
 
-This repository shows how to use [Tekton CD](https://tekton.dev/) to change and sync an (Argo CD)[https://argoproj.github.io/argo-cd/] application running a Minecraft server from a Helm chart.
+This repository shows how to use [Tekton CD](https://tekton.dev/) to change and sync an [Argo CD](https://argoproj.github.io/argo-cd/) application running a Minecraft server from a Helm chart.
 
 ## Setup
 
